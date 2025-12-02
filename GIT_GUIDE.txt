@@ -1,0 +1,330 @@
+========================================
+  GIT COMMANDS - QUICK REFERENCE
+========================================
+
+🎯 PUSH LÊN GITHUB
+
+POWERSHELL (Windows):
+Không dùng && mà dùng ; hoặc chạy từng lệnh riêng
+
+INITIAL SETUP (Lần đầu):
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/AlanTruong43/43gpm.git
+git push -u origin main
+
+Hoặc dùng ; để chạy cùng lúc:
+git init; git add .; git commit -m "Initial commit"; git branch -M main; git remote add origin https://github.com/AlanTruong43/43gpm.git; git push -u origin main
+
+
+========================================
+📝 CẬP NHẬT CODE
+========================================
+
+SAU KHI SỬA CODE:
+
+1. Check status:
+   git status
+
+2. Add changes:
+   git add .
+   
+   Hoặc add file cụ thể:
+   git add dashboard.py
+   git add automation_runner.py
+
+3. Commit:
+   git commit -m "Update: describe your changes here"
+   
+   Examples:
+   git commit -m "Fix: Real-time updates"
+   git commit -m "Add: Profile auto-close feature"
+   git commit -m "Update: Improve UI/UX"
+
+4. Push:
+   git push origin main
+   
+   Hoặc:
+   git push
+
+
+========================================
+🔄 COMMON WORKFLOWS
+========================================
+
+WORKFLOW 1: Daily Updates
+git add .
+git commit -m "Daily update: describe changes"
+git push
+
+WORKFLOW 2: Fix Bug
+git add .
+git commit -m "Fix: bug description"
+git push
+
+WORKFLOW 3: New Feature
+git add .
+git commit -m "Add: feature name"
+git push
+
+WORKFLOW 4: Multiple Changes
+git add file1.py file2.py
+git commit -m "Update: multiple files"
+git push
+
+
+========================================
+🛠️ USEFUL COMMANDS
+========================================
+
+CHECK STATUS:
+git status                    # Xem files đã thay đổi
+
+VIEW HISTORY:
+git log                       # Xem commit history
+git log --oneline            # Xem ngắn gọn
+
+VIEW CHANGES:
+git diff                      # Xem thay đổi chưa commit
+git diff file.py             # Xem thay đổi 1 file
+
+UNDO CHANGES:
+git checkout file.py         # Undo changes 1 file
+git reset HEAD file.py       # Unstage file
+
+VIEW REMOTE:
+git remote -v                # Xem remote URL
+
+PULL UPDATES:
+git pull origin main         # Pull code mới từ GitHub
+
+
+========================================
+⚠️ TROUBLESHOOTING
+========================================
+
+1. CONFLICT KHI PUSH:
+   git pull origin main
+   # Fix conflicts
+   git add .
+   git commit -m "Resolve conflicts"
+   git push
+
+2. FORGOT TO COMMIT:
+   git add .
+   git commit -m "Forgot to commit"
+   git push
+
+3. PUSH BỊ REJECT:
+   git pull origin main --rebase
+   git push
+
+4. XÓA FILE KHÔNG MUỐN:
+   # Thêm vào .gitignore
+   echo "file_name" >> .gitignore
+   git rm --cached file_name
+   git commit -m "Remove file from tracking"
+   git push
+
+
+========================================
+📁 .GITIGNORE
+========================================
+
+ĐÃ CÓ TRONG PROJECT:
+✅ __pycache__/
+✅ *.pyc
+✅ .streamlit/
+✅ screenshots/
+
+NẾU CẦN THÊM:
+echo "new_folder/" >> .gitignore
+git add .gitignore
+git commit -m "Update .gitignore"
+git push
+
+
+========================================
+🔐 GITHUB AUTHENTICATION
+========================================
+
+NẾU BỊ HỎI USERNAME/PASSWORD:
+
+Option 1: Personal Access Token
+1. GitHub.com → Settings → Developer settings
+2. Personal access tokens → Generate new token
+3. Copy token
+4. Dùng token thay vì password
+
+Option 2: SSH Key
+git remote set-url origin git@github.com:AlanTruong43/43gpm.git
+
+
+========================================
+📊 BRANCH MANAGEMENT
+========================================
+
+CREATE BRANCH:
+git branch feature-name
+git checkout feature-name
+
+HOẶC:
+git checkout -b feature-name
+
+SWITCH BRANCH:
+git checkout main
+git checkout feature-name
+
+MERGE BRANCH:
+git checkout main
+git merge feature-name
+
+DELETE BRANCH:
+git branch -d feature-name
+
+
+========================================
+💡 BEST PRACTICES
+========================================
+
+✅ COMMIT OFTEN:
+   - Small commits
+   - Clear messages
+   - One feature per commit
+
+✅ MEANINGFUL MESSAGES:
+   Good:
+   - "Fix: Profile auto-close not working"
+   - "Add: Real-time log updates"
+   - "Update: Improve dashboard UI"
+   
+   Bad:
+   - "update"
+   - "fix"
+   - "changes"
+
+✅ CHECK BEFORE PUSH:
+   git status          # Check files
+   git diff           # Review changes
+   git log --oneline  # Check commits
+
+✅ PULL BEFORE PUSH:
+   git pull origin main
+   git push origin main
+
+
+========================================
+🎯 QUICK COMMANDS SUMMARY
+========================================
+
+SETUP (Once):
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin URL
+git push -u origin main
+
+DAILY USE:
+git add .
+git commit -m "message"
+git push
+
+CHECK:
+git status
+git log
+git diff
+
+SYNC:
+git pull
+git push
+
+
+========================================
+📝 COMMIT MESSAGE CONVENTIONS
+========================================
+
+FORMAT:
+<type>: <description>
+
+TYPES:
+- Add: New feature/file
+- Fix: Bug fix
+- Update: Changes to existing feature
+- Remove: Delete code/file
+- Refactor: Code restructure
+- Docs: Documentation only
+- Style: Formatting, no code change
+- Test: Add tests
+
+EXAMPLES:
+git commit -m "Add: Batch automation feature"
+git commit -m "Fix: Encoding error on Windows"
+git commit -m "Update: Improve real-time updates"
+git commit -m "Docs: Add usage guide"
+
+
+========================================
+🎓 LEARNING GIT
+========================================
+
+BASIC FLOW:
+1. Make changes
+2. git add (stage)
+3. git commit (save)
+4. git push (upload)
+
+THINK OF IT:
+- add = Prepare package
+- commit = Seal package
+- push = Ship package
+
+
+========================================
+🔗 REPOSITORY INFO
+========================================
+
+GitHub URL:
+https://github.com/AlanTruong43/43gpm
+
+Clone URL:
+https://github.com/AlanTruong43/43gpm.git
+
+SSH URL:
+git@github.com:AlanTruong43/43gpm.git
+
+
+========================================
+✅ CURRENT STATUS
+========================================
+
+✅ Git initialized
+✅ Initial commit created
+✅ Branch set to main
+✅ Remote added
+✅ Code pushed to GitHub
+✅ 27 files committed
+✅ 5271 lines of code
+
+
+========================================
+🎉 SUCCESS!
+========================================
+
+Code đã được push lên GitHub thành công!
+
+View tại:
+https://github.com/AlanTruong43/43gpm
+
+Next time chỉ cần:
+git add .
+git commit -m "Your message"
+git push
+
+
+========================================
+Happy Coding! 🚀
+========================================
+
