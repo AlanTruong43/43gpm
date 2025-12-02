@@ -1,0 +1,395 @@
+========================================
+  REAL-TIME UPDATES - LIVE MONITORING
+========================================
+
+🎯 TÍNH NĂNG
+
+Dashboard giờ CẬP NHẬT THỜI GIAN THỰC khi chạy automation:
+✅ Live progress bar
+✅ Real-time logs
+✅ Live status updates
+✅ Auto-refresh mỗi 1 giây
+
+
+========================================
+🔴 LIVE INDICATORS
+========================================
+
+TRẠNG THÁI:
+🟢 AUTOMATION RUNNING    - Đang chạy, auto-refresh
+⚪ AUTOMATION IDLE        - Không chạy
+
+PROGRESS:
+[████████████████░░░░] 80%
+Progress: 80%
+
+METRICS (Live):
+Total: 5
+⏳ Pending: 1
+▶️ Running: 0
+✅ Completed: 3
+❌ Error: 1
+
+
+========================================
+📊 LOGS REAL-TIME
+========================================
+
+HIỂN THỊ:
+- Tất cả logs từng profile
+- Update mỗi 1 giây
+- Scrollable container
+- Emoji indicators
+- Timestamp chính xác
+
+FORMAT:
+[14:30:25] ℹ️ Opening profile: concu
+[14:30:27] ✅ Profile opened successfully
+[14:30:27] ℹ️ Debug: 127.0.0.1:52500
+[14:30:29] ℹ️ Running project: twitter
+[14:30:32] ℹ️ Connecting to browser...
+[14:30:34] ✅ Connected to browser successfully!
+[14:30:34] ℹ️ Navigating to Twitter...
+[14:30:36] ✅ Navigated to https://x.com/home
+[14:30:36] ℹ️ Checking login status...
+[14:30:40] ✅ ALREADY LOGGED IN
+[14:30:42] ✅ Project completed successfully
+[14:30:42] ℹ️ Closing profile...
+[14:30:43] ✅ Profile closed successfully
+
+
+========================================
+🔄 AUTO-REFRESH
+========================================
+
+CƠ CHẾ:
+1. Automation bắt đầu
+   └─> Set runner_active = True
+
+2. Dashboard check runner_active
+   └─> Nếu True:
+       ├─> Hiển thị "🔄 Auto-refreshing..."
+       ├─> Sleep 1 giây
+       └─> st.rerun() → Refresh page
+
+3. Automation kết thúc
+   └─> Set runner_active = False
+   └─> Dừng auto-refresh
+
+REFRESH INTERVAL:
+- 1 giây (fast updates)
+- Có thể thay đổi trong code
+- Balance giữa real-time và performance
+
+
+========================================
+🎨 UI IMPROVEMENTS
+========================================
+
+BEFORE:
+❌ Phải đợi xong mới thấy kết quả
+❌ Không biết đang làm gì
+❌ UI bị "đóng băng"
+❌ Logs không thấy
+
+AFTER:
+✅ Thấy ngay logs mới
+✅ Progress bar update liên tục
+✅ Biết đang ở step nào
+✅ Metrics update real-time
+✅ Live status indicator
+
+
+========================================
+📱 MONITORING EXPERIENCE
+========================================
+
+USER THẤY GÌ:
+
+1. CLICK "START AUTOMATION":
+   Ngay lập tức:
+   - 🟢 AUTOMATION RUNNING
+   - Progress bar xuất hiện
+   - Metrics hiển thị
+
+2. TRONG QUÁ TRÌNH CHẠY:
+   Mỗi giây update:
+   - Logs mới xuất hiện
+   - Progress bar tăng
+   - Metrics thay đổi
+   - Status update
+
+3. PROFILES CHẠY XONG:
+   Real-time:
+   - ✅ Completed count tăng
+   - Progress bar tăng
+   - Logs hiển thị "closed"
+   - Profile result expand
+
+4. TẤT CẢ HOÀN THÀNH:
+   - Progress: 100%
+   - 🟢 → ⚪ IDLE
+   - Dừng auto-refresh
+
+
+========================================
+💡 BEST PRACTICES
+========================================
+
+XEM LOGS:
+✅ Expand profile đang chạy
+✅ Scroll trong code block
+✅ Logs update mỗi giây
+✅ Latest logs ở cuối
+
+MONITOR PROGRESS:
+✅ Xem progress bar
+✅ Check metrics (Running count)
+✅ Watch status indicator
+✅ Count completed vs error
+
+PERFORMANCE:
+✅ 1s refresh = good balance
+✅ Không spam refresh
+✅ UI vẫn responsive
+✅ Logs không bị lag
+
+
+========================================
+⚙️ TECHNICAL DETAILS
+========================================
+
+AUTO-REFRESH CODE:
+```python
+if st.session_state.runner_active:
+    st.info("🔄 Auto-refreshing...")
+    time.sleep(1)
+    st.rerun()
+```
+
+LIVE STATUS:
+```python
+if st.session_state.runner_active:
+    st.success("🟢 AUTOMATION RUNNING")
+else:
+    st.info("⚪ AUTOMATION IDLE")
+```
+
+LOGS DISPLAY:
+```python
+logs = runner.get_profile_logs(profile_id)
+log_text = ""
+for log in logs:
+    level_emoji = {...}
+    log_text += f"[{timestamp}] {emoji} {message}\n"
+st.code(log_text)  # Scrollable
+```
+
+
+========================================
+🎯 USE CASES
+========================================
+
+1. DEBUG PROJECT:
+   - Xem logs real-time
+   - Biết step nào lỗi
+   - Fix ngay không cần đợi
+
+2. MONITOR BATCH:
+   - Xem bao nhiêu profiles đang chạy
+   - Bao nhiêu thành công/lỗi
+   - Estimate time remaining
+
+3. DEMO/PRESENTATION:
+   - Show live automation
+   - Impressive real-time updates
+   - Clear status indicators
+
+4. PRODUCTION:
+   - Monitor 24/7
+   - Quick spot errors
+   - Track progress
+
+
+========================================
+⚠️ LƯU Ý
+========================================
+
+1. AUTO-REFRESH:
+   ✅ Chỉ khi automation đang chạy
+   ✅ Dừng khi idle
+   ✅ Không ảnh hưởng performance
+
+2. BROWSER:
+   ✅ Keep browser tab open
+   ✅ Không switch tab quá nhiều
+   ✅ Auto-refresh vẫn chạy background
+
+3. LOGS:
+   ✅ Scroll xuống xem logs mới
+   ✅ Logs update mỗi giây
+   ✅ Code block có scrollbar
+
+4. STOP:
+   ✅ Click Stop để dừng
+   ✅ Auto-refresh sẽ dừng
+   ✅ UI không bị đóng băng
+
+
+========================================
+🔧 CUSTOMIZATION
+========================================
+
+THAY ĐỔI REFRESH INTERVAL:
+
+File: dashboard.py
+Code: 
+```python
+time.sleep(1)  # ← Change this
+```
+
+Options:
+- 0.5s = Very fast (more load)
+- 1s   = Fast (recommended)
+- 2s   = Medium (less load)
+- 5s   = Slow (save resources)
+
+
+========================================
+📊 PERFORMANCE
+========================================
+
+REFRESH COST:
+- 1s interval = 60 refreshes/phút
+- Streamlit smart caching
+- Only update changed data
+- Minimal overhead
+
+RESOURCE USAGE:
+- CPU: Low (chỉ refresh UI)
+- RAM: Stable (no accumulation)
+- Network: Minimal (local API)
+- Browser: Normal
+
+
+========================================
+🎉 BENEFITS
+========================================
+
+✅ REAL-TIME VISIBILITY
+   - Xem automation đang làm gì
+   - Không bị bất ngờ
+   - Clear progress
+
+✅ BETTER UX
+   - Không đóng băng UI
+   - Responsive
+   - Professional feel
+
+✅ EASIER DEBUG
+   - Spot errors ngay
+   - See exact step fails
+   - Quick iteration
+
+✅ PRODUCTION READY
+   - Monitor 24/7
+   - Track multiple batches
+   - Clear status
+
+
+========================================
+📈 COMPARISON
+========================================
+
+BEFORE (No Real-time):
+❌ Click Start → Wait → See result
+❌ No feedback during run
+❌ UI frozen
+❌ Can't see logs
+❌ Don't know if running
+
+AFTER (Real-time):
+✅ Click Start → See immediate logs
+✅ Continuous feedback
+✅ UI responsive
+✅ Live logs update
+✅ Clear running status
+
+
+========================================
+🎓 USER GUIDE
+========================================
+
+CÁCH XEM REAL-TIME:
+
+1. Start Automation:
+   Tab "Batch Automation" → Start
+
+2. Watch Live Indicators:
+   - 🟢 AUTOMATION RUNNING
+   - Progress bar moving
+   - Metrics updating
+
+3. Expand Profile:
+   Click profile → See logs updating
+
+4. Monitor Until Done:
+   - Watch logs grow
+   - See completed count increase
+   - Wait for 100%
+
+5. Review Results:
+   - Check completed profiles
+   - Review error profiles
+   - Check logs for issues
+
+
+========================================
+💡 TIPS
+========================================
+
+✅ KEEP TAB OPEN
+   - Auto-refresh cần tab active
+   - Switch tab OK but return to see updates
+
+✅ WATCH RUNNING COUNT
+   - Shows active profiles
+   - 0 = queue or finishing
+
+✅ EXPAND RUNNING PROFILES
+   - See live logs
+   - Watch automation steps
+
+✅ USE STOP IF NEEDED
+   - Don't close browser
+   - Click Stop button
+   - Wait for cleanup
+
+
+========================================
+🚀 SUMMARY
+========================================
+
+REAL-TIME FEATURES:
+✅ Live logs (update every 1s)
+✅ Progress bar (live)
+✅ Metrics (live)
+✅ Status indicator (live)
+✅ Auto-refresh (smart)
+
+BENEFITS:
+✅ Better UX
+✅ Easier debug
+✅ Professional
+✅ Production-ready
+
+USAGE:
+✅ Just start automation
+✅ Watch it live
+✅ No extra config needed
+
+
+========================================
+Happy Live Monitoring! 🔴
+========================================
+

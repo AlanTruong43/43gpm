@@ -1,0 +1,241 @@
+========================================
+  DATA CLEANUP - AUTO CLEAR
+========================================
+
+🎯 MỤC ĐÍCH
+
+Dashboard giờ TỰ ĐỘNG XÓA dữ liệu tồn động khi:
+1. Đóng dashboard (Ctrl+C)
+2. Click "Clear All" button
+3. Browser session kết thúc
+
+
+========================================
+🗑️ DỮ LIỆU BỊ XÓA
+========================================
+
+KHI ĐÓNG DASHBOARD:
+✅ Automation runner data
+✅ Task queue
+✅ Results & logs
+✅ Running profiles list
+✅ Session state
+
+KHÔNG XÓA:
+❌ Profiles trong 43GPM (vẫn giữ)
+❌ Browser cookies/cache (trong profiles)
+❌ Project files
+❌ Configuration files
+
+
+========================================
+⚙️ CÁCH SỬ DỤNG
+========================================
+
+1. CLEAR MANUAL (SIDEBAR):
+   
+   Dashboard → Sidebar → Data Management
+   
+   [🗑️ Clear All]  - Xóa tất cả data
+   [⏹️ Stop All]   - Đóng tất cả profiles
+   
+   → Click để xóa ngay lập tức
+
+2. CLEAR TỰ ĐỘNG:
+   
+   Khi đóng dashboard:
+   - Nhấn Ctrl+C trong terminal
+   - Đóng browser tab
+   - Stop dashboard
+   
+   → Data tự động xóa
+
+3. CLEAR TRONG BATCH AUTOMATION:
+   
+   Tab "Batch Automation" → [🗑️ Clear Results]
+   
+   → Xóa kết quả automation
+
+
+========================================
+🔧 CLEANUP FUNCTIONS
+========================================
+
+cleanup_on_close():
+├─ Clear automation runner
+├─ Clear task queue
+├─ Clear results & logs
+├─ Clear running profiles
+└─ Reset session state
+
+Được gọi khi:
+✅ Click "Clear All" button
+✅ Click "Clear Results" button
+✅ Dashboard shutdown (atexit)
+
+
+========================================
+💡 LỢI ÍCH
+========================================
+
+✅ KHÔNG TÍCH TỤ DỮ LIỆU
+   - Mỗi lần chạy là fresh start
+   - Không bị conflict data cũ
+
+✅ TIẾT KIỆM RAM
+   - Không giữ logs cũ
+   - Không giữ results cũ
+
+✅ SẠCH SẼ
+   - Không rối data
+   - Dễ debug
+
+✅ PRIVACY
+   - Không lưu lịch sử
+   - Không lưu logs lâu dài
+
+
+========================================
+⚠️ LƯU Ý
+========================================
+
+1. DATA KHÔNG LƯU KHI ĐÓNG:
+   - Logs sẽ mất
+   - Results sẽ mất
+   - Progress sẽ mất
+   
+   → Nếu cần lưu, export trước khi đóng
+
+2. PROFILES VẪN CHẠY:
+   - Đóng dashboard KHÔNG đóng profiles
+   - Profiles vẫn mở trong 43GPM
+   - Cần đóng thủ công hoặc click "Stop All"
+
+3. AUTOMATION VẪN CHẠY:
+   - Nếu đang chạy automation, đóng dashboard sẽ interrupt
+   - Profiles có thể bị bỏ lại đang mở
+   - Nên Stop automation trước khi đóng
+
+
+========================================
+🛠️ TROUBLESHOOTING
+========================================
+
+Q: Đóng dashboard nhưng profiles vẫn mở?
+A: Click "Stop All" trong sidebar trước khi đóng
+
+Q: Data vẫn còn sau khi clear?
+A: Refresh page (F5) hoặc restart dashboard
+
+Q: Muốn giữ logs?
+A: Copy logs trước khi đóng (planned: export logs)
+
+Q: Automation bị interrupt khi đóng?
+A: Nên đợi automation hoàn thành hoặc click Stop
+
+
+========================================
+📊 WORKFLOW ĐỀ XUẤT
+========================================
+
+KHI KẾT THÚC CÔNG VIỆC:
+
+1. Đợi automation hoàn thành
+   hoặc
+   Click [⏹️ Stop] để dừng
+
+2. Review results và logs
+   (Copy nếu cần)
+
+3. Click [⏹️ Stop All]
+   → Đóng tất cả profiles
+
+4. Click [🗑️ Clear All]
+   → Xóa dữ liệu
+
+5. Đóng dashboard (Ctrl+C)
+   → Data tự động cleanup
+
+
+KHI BẮT ĐẦU LẠI:
+
+1. Start dashboard
+   → Fresh state, không có data cũ
+
+2. Vào Batch Automation
+   → Không có results cũ
+
+3. Configure và run
+   → Clean start
+
+
+========================================
+🎯 BEST PRACTICES
+========================================
+
+✅ CLEAR THƯỜNG XUYÊN:
+   - Sau mỗi batch automation
+   - Khi đổi project
+   - Khi test
+
+✅ STOP ALL TRƯỚC KHI CLEAR:
+   - Đóng profiles trước
+   - Tránh profiles bị treo
+
+✅ KHÔNG ĐÓNG DASHBOARD KHI ĐANG CHẠY:
+   - Đợi hoàn thành
+   - Hoặc Stop trước
+
+✅ EXPORT DATA NẾU CẦN:
+   - Copy logs quan trọng
+   - Screenshot results
+   - Note lại errors
+
+
+========================================
+📈 SO SÁNH
+========================================
+
+TRƯỚC (Không auto cleanup):
+❌ Data tích tụ
+❌ RAM tăng dần
+❌ Logs cũ lẫn lộn
+❌ Results conflict
+
+SAU (Có auto cleanup):
+✅ Data sạch mỗi lần
+✅ RAM ổn định
+✅ Logs rõ ràng
+✅ Fresh start mỗi lần
+
+
+========================================
+🔮 TƯƠNG LAI
+========================================
+
+PLANNED FEATURES:
+□ Export logs before cleanup
+□ Save results to file
+□ Auto cleanup old data (> 24h)
+□ Cleanup confirmation dialog
+□ Selective cleanup (chỉ xóa 1 phần)
+
+
+========================================
+📝 SUMMARY
+========================================
+
+✅ Auto cleanup khi đóng dashboard
+✅ Manual cleanup: "Clear All" button
+✅ Stop all profiles: "Stop All" button
+✅ Clear results: "Clear Results" button
+✅ Không tích tụ data
+✅ Fresh start mỗi lần
+✅ Tiết kiệm RAM
+✅ Sạch sẽ & dễ debug
+
+
+========================================
+Happy Clean Coding! 🧹
+========================================
+
