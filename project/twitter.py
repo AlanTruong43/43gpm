@@ -26,92 +26,114 @@ def run(profile_data):
             - browser_location: Path to browser executable
             - driver_path: Path to ChromeDriver
     """
-    print("=" * 60)
-    print(f"[*] Starting Twitter Automation")
-    print(f"[*] Profile: {profile_data['profile_name']}")
-    print(f"[*] Debug Address: {profile_data['remote_debugging_address']}")
-    print("=" * 60)
+    print(f">>> [TWITTER] Connecting to browser at: {profile_data['remote_debugging_address']}...")
     
     driver = None
     
     try:
         # Connect to the already opened browser profile
-        print("\n[1/3] Connecting to browser...")
         chrome_options = Options()
         chrome_options.add_experimental_option(
             "debuggerAddress", 
             profile_data['remote_debugging_address']
         )
         
-        # Initialize driver
-        driver = webdriver.Chrome(options=chrome_options)
-        print("[OK] Connected to browser successfully!")
+        print(f">>> [TWITTER] Initializing WebDriver (Connecting to browser)...")
+        try:
+            from selenium.webdriver.chrome.service import Service
+            
+            # Using specific driver_path from GPM if available
+            driver_path = profile_data.get('driver_path')
+            if driver_path:
+                print(f">>> [TWITTER] Using specific driver: {driver_path}")
+                service = Service(executable_path=driver_path)
+                driver = webdriver.Chrome(service=service, options=chrome_options)
+            else:
+                print(">>> [TWITTER] Using default system driver")
+                driver = webdriver.Chrome(options=chrome_options)
+                
+        except Exception as chrome_err:
+            print(f">>> [ERROR] Selenium could not connect to browser: {chrome_err}")
+            print(">>> [TIP] Có thể driver_path không đúng hoặc trình duyệt chưa hỗ trợ Remote Debugging.")
+            return
+            
+        print(f">>> [TWITTER] WebDriver initialized successfully!")
+        
+        # Step 0: Ensure we are using the correct window/tab
+        print(f">>> [TWITTER] Scanning for a valid browser tab...")
+        all_handles = driver.window_handles
+        target_handle = None
+        
+        for handle in all_handles:
+            driver.switch_to.window(handle)
+            current_url = driver.current_url
+            print(f">>> [TWITTER] Window {handle[:8]}: {current_url}")
+            
+            # Skip extension background pages and other internal chrome pages
+            if not current_url.startswith("chrome-extension://") and not current_url.startswith("chrome://"):
+                target_handle = handle
+                break
+        
+        if not target_handle:
+            print(">>> [TWITTER] No active web tab found. Creating a new one...")
+            driver.execute_script("window.open('about:blank', '_blank');")
+            driver.switch_to.window(driver.window_handles[-1])
+        else:
+            print(f">>> [TWITTER] Selected valid tab: {driver.current_url}")
         
         # Step 1: Navigate to Twitter home
-        print("\n[2/3] Navigating to Twitter...")
-        driver.get("https://x.com/home")
-        print("[OK] Navigated to https://x.com/home")
+        target_url = "https://x.com/home"
+        print(f">>> [TWITTER] Navigating to {target_url}...")
+        driver.get(target_url)
+        time.sleep(2) # Wait for page start
+        print(f">>> [TWITTER] Navigation complete! New URL: {driver.current_url}")
         
-        # Step 2: Wait for login button or check if already logged in
-        print("\n[3/3] Checking login status...")
+        # VISUAL FEEDBACK: Scroll down then up
+        print(">>> [TWITTER] Performing visual feedback (Scrolling)...")
+        driver.execute_script("window.scrollTo(0, 500);")
+        time.sleep(1)
+        driver.execute_script("window.scrollTo(0, 0);")
         
+        # Step 2: Check login status
+        print(">>> [TWITTER] Checking for login button (timeout 10s)...")
         try:
-            # Wait for the login button with text "Đăng nhập vào X"
+            # Wait for the login button
             login_button = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.XPATH, '//*[text()="Đăng nhập vào X"]'))
             )
-            
-            print("[!] NOT LOGGED IN - Login button found!")
-            print("[*] Found login button element")
-            print("\n[INFO] Next steps:")
-            print("   1. Click the login button")
-            print("   2. Enter credentials")
-            print("   3. Handle verification if needed")
-            
-            # Highlight the login button
-            driver.execute_script("arguments[0].style.border='3px solid red'", login_button)
-            print("\n[*] Login button has been highlighted in red")
+            print(">>> [TWITTER] RESULT: Not logged in. Highlighting button.")
+            driver.execute_script("arguments[0].style.border='5px solid red'; arguments[0].style.backgroundColor='yellow';", login_button)
             
         except TimeoutException:
-            print("[OK] ALREADY LOGGED IN - No login button found!")
-            print("[OK] Account is authenticated and ready to use")
+            print("[OK] ALREADY LOGGED IN")
+            # Draw a visual box to confirm connection
+            confirm_js = """
+            var div = document.createElement('div');
+            div.style.position = 'fixed';
+            div.style.top = '10px';
+            div.style.right = '10px';
+            div.style.padding = '10px';
+            div.style.background = 'green';
+            div.style.color = 'white';
+            div.style.zIndex = '9999';
+            div.style.fontSize = '20px';
+            div.innerHTML = 'BOT CONNECTED SUCCESSFULLY';
+            document.body.appendChild(div);
+            setTimeout(function() { div.remove(); }, 5000);
+            """
+            driver.execute_script(confirm_js)
             
-            # Check for timeline or other logged-in elements
             try:
-                # Try to find the compose tweet button
-                compose_button = driver.find_element(By.XPATH, "//a[@aria-label='Post']")
-                print("[OK] Found 'Post' button - User is on the timeline")
-            except NoSuchElementException:
-                print("[!] Logged in but timeline not fully loaded")
-        
-        print("\n" + "=" * 60)
-        print("[OK] Automation Step Completed Successfully!")
-        print("[*] Browser will remain open for next actions")
-        print("=" * 60)
-        
-        # Keep browser open for manual inspection or next steps
-        time.sleep(2)
-        
-    except Exception as e:
-        print("\n" + "=" * 60)
-        print(f"[ERROR] Error during automation: {e}")
-        print("=" * 60)
-        
-        # Take screenshot for debugging
-        if driver:
-            try:
-                screenshot_path = f"error_screenshot_{int(time.time())}.png"
-                driver.save_screenshot(screenshot_path)
-                print(f"[*] Screenshot saved: {screenshot_path}")
+                driver.find_element(By.XPATH, "//a[@aria-label='Post']")
+                print("[OK] Timeline loaded")
             except:
                 pass
         
+    except Exception as e:
+        print(f"[ERROR] Twitter Automation: {e}")
         raise
-    
     finally:
-        # DON'T close the driver - let the dashboard handle it
-        # driver.quit()
-        print("\n[INFO] Browser remains open. Close from dashboard when done.\n")
+        print("[INFO] Tasks finished. Browser left open.")
 
 
 # Example usage if run directly
