@@ -1,0 +1,78 @@
+# QUY TRÌNH VÀ PHƯƠNG THỨC CODE CHO DỰ ÁN AUTOMATION 43GPM
+
+Tài liệu này hướng dẫn cách cấu trúc một script automation (ví dụ: `twitter.py`) để tương thích với hệ thống API Server và trình duyệt 43GPM.
+
+---
+
+## 1. Cấu trúc cơ bản của một File Automation
+Mọi script mới phải được đặt trong thư mục `project/` và có cấu trúc như sau:
+
+```python
+# -*- coding: utf-8 -*-
+import encoding_fix  # BẮT BUỘC: Fix lỗi font chữ trên Windows
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+# ... import các module selenium khác (By, WebDriverWait, EC, ...)
+
+def run(profile_data):
+    \"\"\"
+    Hàm entry point chính. API Server sẽ gọi hàm này.
+    profile_data chứa: remote_debugging_address, driver_path, profile_id...
+    \"\"\"
+    try:
+        # Bước 1: Kết nối Driver vào browser đang mở
+        chrome_options = Options()
+        chrome_options.add_experimental_option(\"debuggerAddress\", profile_data['remote_debugging_address'])
+        
+        # Sử dụng driver_path từ GPM nếu có
+        driver_path = profile_data.get('driver_path')
+        if driver_path:
+            from selenium.webdriver.chrome.service import Service
+            service = Service(executable_path=driver_path)
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+        else:
+            driver = webdriver.Chrome(options=chrome_options)
+
+        # Bước 2: Quản lý Tab (Chọn tab đúng, tránh trang extension)
+        # ... logic chuyển handle ...
+
+        # Bước 3: Thực hiện các bước thao tác (Mở link, click, type...)
+        # ... logic automation ...
+
+    except Exception as e:
+        print(f\">>> [ERROR] {e}\")
+    finally:
+        print(\">>> [INFO] Hoàn thành tác vụ.\")
+```
+
+---
+
+## 2. Quy trình làm việc (Các bước thao tác)
+Khi gửi yêu cầu tạo script mới, bạn chỉ cần cung cấp các thông tin sau:
+
+1. **Tên Project**: Ví dụ: `facebook`, `tiktok`, `discord`.
+2. **URL Mục tiêu**: Trang web cần truy cập đầu tiên.
+3. **Các Bước Thao Tác (Sequence)**:
+   - Bước 1: Kiểm tra xem đã login chưa (Dựa vào element nào).
+   - Bước 2: Tìm nội dung/nút nào để tương tác.
+   - Bước 3: Các hành động đặc biệt (Scroll, Wait, Highlighting).
+4. **Phản hồi trực quan (Visual Feedback)**: Có cần hiện thông báo "Bot Connected" hay highlight nút xanh/đỏ không?
+
+---
+
+## 3. Các tiêu chuẩn kỹ thuật (Checklist dành cho AI)
+Để đảm bảo script chạy ổn định trên môi trường của bạn, tôi (AI) sẽ luôn tuân thủ:
+
+- **Encoding**: Luôn có `import encoding_fix` ở dòng đầu.
+- **Connection**: Luôn dùng `debuggerAddress` để không mở browser mới (tận dụng browser GPM đã mở).
+- **Prefix Logging**: Sử dụng prefix như `>>> [NAME]` để dễ theo dõi trong console của API Server.
+- **Tab Selection**: Luôn scan `window_handles` để tìm tab thực tế thay vì tab nền của extension.
+- **Visual Interaction**: Inject Javascript để hiển thị thông báo trạng thái trên màn hình trình duyệt cho bạn thấy.
+
+---
+
+## 4. Cách sử dụng sau này
+Bạn chỉ cần gửi tin nhắn: 
+> \"Hãy tạo script [Tên_Dịch_Vụ]. Các bước: 1. Truy cập [URL], 2. Click [Nút], 3. Check [Element]...\"
+
+Tôi sẽ tự động áp dụng quy trình trong file `tutorial.txt` này để viết code chuẩn cho bạn.
