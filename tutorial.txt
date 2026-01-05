@@ -76,3 +76,29 @@ Bạn chỉ cần gửi tin nhắn:
 > \"Hãy tạo script [Tên_Dịch_Vụ]. Các bước: 1. Truy cập [URL], 2. Click [Nút], 3. Check [Element]...\"
 
 Tôi sẽ tự động áp dụng quy trình trong file `tutorial.txt` này để viết code chuẩn cho bạn.
+
+---
+
+## 5. Cách khởi chạy API Server
+Để hệ thống hoạt động, bạn cần chạy file `api_server.py` để lắng nghe các yêu cầu điều khiển:
+- Mở Terminal/CMD tại thư mục gốc.
+- Chạy lệnh: `python api_server.py`
+- Server sẽ chạy tại: `http://127.0.0.1:8000`
+
+---
+
+## 6. Cách kích hoạt Automation (Endpoint)
+Mọi script trong thư mục `project/` đều có thể được gọi thông qua trình duyệt hoặc phần mềm thứ 3 bằng URL:
+
+**Cú pháp (Khuyên dùng - Tự động nhận diện port):**
+`http://127.0.0.1:8000/execute/[Tên_Project]?profile_id=[ID_GPM]`
+
+*Ví dụ:* Để chạy script `import_key_okx.py` cho profile GPM có ID là `abc-123`:
+`http://127.0.0.1:8000/execute/import_key_okx?profile_id=abc-123`
+
+---
+
+## 7. Ghi chú quan trọng
+- Luôn mở phần mềm 43GPM trước khi gọi API.
+- Script sẽ tự động tìm tab đang mở hoặc mở tab mới tùy theo logic trong hàm `run()`.
+- Sử dụng Javascript Click (`execute_script`) khi tương tác với Extension để tránh bị crash.
