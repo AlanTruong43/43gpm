@@ -6,7 +6,7 @@ Supports:
 2. Auto Port (via Profile ID): /execute/{project}?profile_id=xxx
 """
 import encoding_fix
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Query
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Query, Request
 from pydantic import BaseModel
 import importlib.util
 from pathlib import Path
@@ -36,7 +36,7 @@ def check_port(host: str, port: int) -> bool:
     sock.close()
     return result == 0
 
-def run_automation_task(project_name: str, data: AutomationRequest):
+def run_automation_task(project_name: str, data: AutomationRequest, extra_params: dict = None):
     """Function to run automation in background"""
     try:
         project_path = Path(f"project/{project_name}.py")
@@ -64,6 +64,10 @@ def run_automation_task(project_name: str, data: AutomationRequest):
                 "browser_location": "",
                 "driver_path": data.driver_path
             }
+            # Merge extra parameters
+            if extra_params:
+                profile_data.update(extra_params)
+                
             project_module.run(profile_data)
         else:
             print(f">>> [ERROR] No run() function in {project_name}")
@@ -84,6 +88,7 @@ async def root():
 async def execute_get(
     project_name: str, 
     background_tasks: BackgroundTasks,
+    request: Request,
     profile_id: str = Query(None, description="Profile ID (Auto detect port)"),
     port: str = Query(None, description="Manual port"),
     host: str = "127.0.0.1"
@@ -91,6 +96,11 @@ async def execute_get(
     """
     GET Method: Supports both manual port and auto detection via profile_id
     """
+    # Capture all query parameters
+    extra_params = dict(request.query_params)
+    # Remove standard params from extra_params
+    for key in ["profile_id", "port", "host"]:
+        extra_params.pop(key, None)
     debug_address = None
     driver_path = ""
     
@@ -126,8 +136,8 @@ async def execute_get(
         driver_path=driver_path
     )
     
-    background_tasks.add_task(run_automation_task, project_name, data)
-    return {"status": "queued", "project": project_name, "address": debug_address}
+    background_tasks.add_task(run_automation_task, project_name, data, extra_params)
+    return {"status": "queued", "project": project_name, "address": debug_address, "extra_params": extra_params}
 
 @app.post("/execute/{project_name}")
 async def execute_post(project_name: str, data: AutomationRequest, background_tasks: BackgroundTasks):

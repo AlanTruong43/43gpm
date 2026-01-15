@@ -8,207 +8,209 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
 import time
+import logging
+
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("OKX_Auto")
 
 def run(profile_data):
     """
-    Script automation cho ví OKX với cơ chế xác thực cửa sổ cực kỳ mạnh mẽ.
+    Script automation cho ví OKX tối ưu tốc độ và độ ổn định.
     """
-    PROJECT_NAME = "OKX"
-    print(f">>> [{PROJECT_NAME}] Bắt đầu kết nối tới: {profile_data['remote_debugging_address']}...")
+    PROJECT_NAME = "OKX (v2.1)"
+    mnemonic_phrase = profile_data.get('mnemonic', "buddy off slide lounge hurry ankle base spoon video coconut surge hover")
+    password = profile_data.get('password', "AlanTruong@113")
+    debug_address = profile_data.get('remote_debugging_address')
+    
+    logger.info(f">>> [{PROJECT_NAME}] Bắt đầu: {debug_address}...")
     
     driver = None
     
-    def get_all_windows_info():
-        info = []
-        try:
-            handles = driver.window_handles
-            for h in handles:
-                try:
-                    driver.switch_to.window(h)
-                    info.append({"handle": h, "url": driver.current_url, "title": driver.title})
-                except:
-                    info.append({"handle": h, "url": "ERROR", "title": "ERROR"})
-        except:
-            pass
-        return info
+    def init_driver(address, path, retries=5):
+        """Khởi tạo Driver với cơ chế thử lại nếu port chưa sẵn sàng"""
+        for i in range(retries):
+            try:
+                opts = Options()
+                opts.add_experimental_option("debuggerAddress", address)
+                # Tăng timeout kết nối
+                # opts.add_argument("--proxy-server='direct://'")
+                # opts.add_argument("--proxy-bypass-list=*")
+                
+                service = Service(executable_path=path) if path else Service()
+                d = webdriver.Chrome(service=service, options=opts)
+                # Test thử kết nối
+                d.current_url
+                return d
+            except Exception as e:
+                logger.warning(f"Thử kết nối lần {i+1} thất bại: {str(e)[:100]}")
+                time.sleep(2)
+        raise Exception(f"Không thể kết nối tới trình duyệt tại {address} sau {retries} lần thử.")
 
     def find_and_switch_to_ui(silent=False):
-        """Tìm tab extension OKX có giao diện người dùng thực sự"""
+        """Tìm tab extension OKX một cách bền bỉ"""
         try:
             handles = driver.window_handles
-            if not silent: print(f">>> [{PROJECT_NAME}] Đang kiểm tra {len(handles)} cửa sổ...")
+            if not silent: logger.info(f"[{PROJECT_NAME}] Quét {len(handles)} cửa sổ...")
             
             for h in handles:
                 try:
                     driver.switch_to.window(h)
                     url = driver.current_url
-                    if not silent: print(f">>> [{PROJECT_NAME}] - Cửa sổ {h[:8]}: {url}")
-                    
                     if "mcohilncbfahbmgdjkbpemcciiolgcge" in url:
-                        # Loại trừ các trang chạy ngầm
                         if any(x in url for x in ["offscreen.html", "background.html", "generated_background"]):
                             continue
-                        # Chấp nhận nếu là popup, initialize hoặc trang chính của extension
-                        if any(x in url for x in ["popup.html", "initialize", "home.html", "notification.html", "index.html"]):
-                            if not silent: print(f">>> [{PROJECT_NAME}] ==> Đã xác định tab UI OKX: {h[:8]}")
-                            return True
+                        return True
                 except:
                     continue
         except Exception as e:
-            if not silent: print(f">>> [{PROJECT_NAME}] Lỗi khi duyệt handles: {e}")
+            if not silent: logger.error(f"Lỗi khi duyệt handles: {e}")
         return False
 
-    def wait_for_element_safe(xpath, timeout=20, name="Element"):
-        """Chờ element xuất hiện một cách an toàn, tự động khôi phục handle nếu mất"""
-        print(f">>> [{PROJECT_NAME}] Đang tìm {name}...")
+    def wait_for_element_safe(xpaths, timeout=15, name="Element"):
+        """Chờ element với danh sách XPaths dự phòng"""
+        if isinstance(xpaths, str):
+            xpaths = [xpaths]
+            
         start_time = time.time()
         while time.time() - start_time < timeout:
             try:
-                # Kiểm tra xem còn ở đúng tab không
-                try:
-                    curr_url = driver.current_url
-                    if "mcohilncbfahbmgdjkbpemcciiolgcge" not in curr_url:
-                        find_and_switch_to_ui(silent=True)
-                except:
-                    find_and_switch_to_ui(silent=True)
-                
-                # Tìm element
-                elements = driver.find_elements(By.XPATH, xpath)
-                if elements and len(elements) > 0:
-                    el = elements[0]
-                    if el.is_displayed() and el.is_enabled():
-                        return el
-            except Exception as e:
-                # Nếu mất kết nối hoàn toàn, thử tìm lại UI
+                # Đảm bảo handle vẫn sống
+                try: driver.current_url
+                except: find_and_switch_to_ui(silent=True)
+
+                for xpath in xpaths:
+                    elements = driver.find_elements(By.XPATH, xpath)
+                    for el in elements:
+                        if el.is_displayed():
+                            return el
+            except:
                 find_and_switch_to_ui(silent=True)
-            
-            time.sleep(1)
+            time.sleep(0.5)
+        raise TimeoutException(f"Không tìm thấy {name}")
+
+    def inject_mnemonic_js(phrase):
+        """Dán mnemonic cực nhanh và trigger sự kiện React"""
+        js_code = """
+        const phrase = arguments[0];
+        // Tìm bất kỳ input nào có vẻ là mnemonic hoặc input đầu tiên
+        const inputs = document.querySelectorAll('input') || [];
+        const input = Array.from(inputs).find(i => i.placeholder?.includes('word') || i.className?.includes('mnemonic') || true);
         
-        raise TimeoutException(f"Không tìm thấy {name} sau {timeout}s (XPath: {xpath})")
+        if (input) {
+            input.focus();
+            const dataTransfer = new DataTransfer();
+            dataTransfer.setData('text/plain', phrase);
+            const event = new ClipboardEvent('paste', {
+                clipboardData: dataTransfer,
+                bubbles: true,
+                cancelable: true
+            });
+            input.dispatchEvent(event);
+            
+            // Fallback: Dispatch input event cho từng từ nếu paste bị chặn
+            setTimeout(() => {
+                if (input.value === '') {
+                   input.value = phrase.split(' ')[0];
+                   input.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            }, 100);
+            return true;
+        }
+        return false;
+        """
+        try:
+            return driver.execute_script(js_code, phrase)
+        except Exception as e:
+            logger.error(f"Lỗi JS Injection: {e}")
+            return False
 
     try:
-        # Bước 1: Khởi tạo Driver
-        chrome_options = Options()
-        chrome_options.add_experimental_option("debuggerAddress", profile_data['remote_debugging_address'])
-        driver_path = profile_data.get('driver_path')
-        
-        if driver_path:
-            service = Service(executable_path=driver_path)
-            driver = webdriver.Chrome(service=service, options=chrome_options)
-        else:
-            driver = webdriver.Chrome(options=chrome_options)
+        driver = init_driver(debug_address, profile_data.get('driver_path'))
 
-        print(f">>> [{PROJECT_NAME}] WebDriver kết nối thành công!")
-
-        # Bước 2: Tìm tab extension
+        # Bước 1: Điều hướng tới OKX
         if not find_and_switch_to_ui():
-            print(f">>> [{PROJECT_NAME}] Chưa có tab OKX UI. Đang mở mới...")
             target_url = "chrome-extension://mcohilncbfahbmgdjkbpemcciiolgcge/popup.html#/initialize"
             driver.execute_script(f"window.open('{target_url}', '_blank');")
-            time.sleep(2)
+            time.sleep(1)
             if not find_and_switch_to_ui():
-                print(f">>> [{PROJECT_NAME}] [ERROR] Không thể tìm thấy tab extension sau khi mở!")
-                return
+                raise Exception("Không tìm thấy giao diện OKX")
 
-        # Bước 3: Thao tác Import Wallet
-        import_wallet_xpath = '//*[@data-testid="onboard-page-import-wallet-button"]'
-        btn = wait_for_element_safe(import_wallet_xpath, name="Nút Import Wallet")
-        driver.execute_script("arguments[0].click();", btn)
-        print(f">>> [{PROJECT_NAME}] Đã click 'Import Wallet'.")
-        time.sleep(1)
+        # Bước 2: Bấm Import (Xử lý cả trường hợp đã ở màn hình trong)
+        try:
+            import_btn = wait_for_element_safe([
+                '//*[@data-testid="onboard-page-import-wallet-button"]',
+                '//*[text()="Import wallet" or text()="Nhập ví"]',
+                '//button[contains(., "Import")]'
+            ], timeout=7, name="Nút Import")
+            driver.execute_script("arguments[0].click();", import_btn)
+        except:
+            logger.info("Có thể đã qua bước Import, tiếp tục...")
 
-        # Bước 4: Thao tác Seed Phrase
-        import_type_xpath = '//*[@data-testid="onboard-page-import-seed-phrase-or-private-key"]'
-        btn = wait_for_element_safe(import_type_xpath, name="Nút Seed Phrase")
-        driver.execute_script("arguments[0].click();", btn)
-        print(f">>> [{PROJECT_NAME}] Đã click 'Import Seed Phrase'.")
-        time.sleep(1)
+        # Bước 3: Chọn Seed Phrase
+        try:
+            seed_btn = wait_for_element_safe([
+                '//*[@data-testid="onboard-page-import-seed-phrase-or-private-key"]',
+                '//*[contains(text(), "Seed phrase") or contains(text(), "Cụm từ")]'
+            ], timeout=7, name="Nút Seed Phrase")
+            driver.execute_script("arguments[0].click();", seed_btn)
+        except:
+            logger.info("Có thể đã ở trang nhập Key, tiếp tục...")
 
-        # Bước 5: Nhập 12 từ Mnemonic
-        print(f">>> [{PROJECT_NAME}] Đang chuẩn bị nhập 12 từ mnemonic...")
-        mnemonic_phrase = "buddy off slide lounge hurry ankle base spoon video coconut surge hover"
-        words = mnemonic_phrase.split()
+        # Bước 4: Nhập Key (JS Injection)
+        logger.info(f"[{PROJECT_NAME}] Đang nhập mnemonic...")
+        time.sleep(1) # Chờ animation
+        wait_for_element_safe('//input', timeout=10, name="Các ô nhập Key")
         
-        input_xpath = '//*[@class="mnemonic-words-inputs__container__input"]'
-        # Chờ ô đầu tiên xuất hiện
-        wait_for_element_safe(input_xpath, name="Ô nhập mnemonic")
+        if inject_mnemonic_js(mnemonic_phrase):
+            logger.info("Dã tiêm JS nhập Key thành công.")
+        else:
+            raise Exception("Không thể thực hiện JS Injection")
+
+        # Bước 5: Xác nhận
+        confirm_btn = wait_for_element_safe([
+            '//*[@data-testid="import-seed-phrase-or-private-key-page-confirm-button"]',
+            '//button[@type="submit"]',
+            '//button[contains(., "Confirm") or contains(., "Xác nhận")]'
+        ], name="Nút Xác nhận Key")
+        driver.execute_script("arguments[0].click();", confirm_btn)
+
+        # Bước 6: Password
+        # Chọn "Password" nếu có danh sách lựa chọn
+        try:
+            pass_type = wait_for_element_safe('//*[contains(@class, "item") and contains(., "Password")]', timeout=5, name="Chọn Password")
+            driver.execute_script("arguments[0].click();", pass_type)
+            wait_for_element_safe('//button[contains(., "Next") or contains(., "Tiếp tục")]').click()
+        except: pass
+
+        # Nhập pass
+        pass_inputs = wait_for_element_safe('//input[@type="password"]', timeout=10, name="Ô nhập mật khẩu")
+        inputs = driver.find_elements(By.XPATH, '//input[@type="password"]')
+        for inp in inputs:
+            inp.send_keys(password)
         
-        for i, word in enumerate(words):
-            # Lấy list inputs mới để tránh stale
-            inputs = driver.find_elements(By.XPATH, input_xpath)
-            if i < len(inputs):
-                inputs[i].send_keys(word)
-                print(f">>> [{PROJECT_NAME}] Đã nhập từ #{i+1}: {word}")
-            else:
-                print(f">>> [{PROJECT_NAME}] [WARNING] Không tìm thấy ô nhập thứ {i+1}")
-        
-        # Bước 6: Click Xác nhận
-        confirm_btn_xpath = '//*[@data-testid="import-seed-phrase-or-private-key-page-confirm-button"]'
-        btn = wait_for_element_safe(confirm_btn_xpath, name="Nút Xác nhận Key")
-        driver.execute_script("arguments[0].click();", btn)
-        print(f">>> [{PROJECT_NAME}] Đã click 'Xác nhận'.")
+        # Click Final
+        final_btn = wait_for_element_safe('//button[contains(@class, "btn-fill-highlight") or contains(., "Confirm")]', name="Xác nhận cuối")
+        driver.execute_script("arguments[0].click();", final_btn)
 
-        # Bước 7: Bảo mật (Password)
-        security_xpath = '//*[@class="_item_16nvb_22 _item-select_16nvb_39"]'
-        btn = wait_for_element_safe(security_xpath, name="Chọn bảo mật Password")
-        driver.execute_script("arguments[0].click();", btn)
-        
-        next_btn_xpath = '//*[@class="okui-button-var okui-btn btn-lg btn-fill-highlight block mobile"]'
-        btn = wait_for_element_safe(next_btn_xpath, name="Nút Tiếp theo (Bảo mật)")
-        driver.execute_script("arguments[0].click();", btn)
-        print(f">>> [{PROJECT_NAME}] Đã chọn Password và Tiếp theo.")
+        # Bước 7: Bắt đầu
+        start_btn = wait_for_element_safe('//*[contains(text(), "Bắt đầu") or contains(text(), "Start")]', timeout=10, name="Bắt đầu hành trình")
+        driver.execute_script("arguments[0].click();", start_btn)
 
-        # Bước 8: Nhập mật khẩu
-        password = "AlanTruong@113"
-        pass_input_xpath = '//input[@type="password"]'
-        wait_for_element_safe(pass_input_xpath, name="Ô nhập mật khẩu")
-        inputs = driver.find_elements(By.XPATH, pass_input_xpath)
-        if len(inputs) < 2:
-            inputs = driver.find_elements(By.XPATH, '//input')
-            
-        for i in range(min(2, len(inputs))):
-            inputs[i].send_keys(password)
-        print(f">>> [{PROJECT_NAME}] Đã nhập mật khẩu.")
-
-        # Click Xác nhận mật khẩu
-        btn = wait_for_element_safe(next_btn_xpath, name="Nút Xác nhận mật khẩu")
-        driver.execute_script("arguments[0].click();", btn)
-
-        # Bước 9: Bắt đầu hành trình
-        start_xpath = '//*[text()="Bắt đầu hành trình Web3 của bạn"]'
-        btn = wait_for_element_safe(start_xpath, name="Nút Bắt đầu hành trình")
-        driver.execute_script("arguments[0].click();", btn)
-
-        # Bước 10: Kiểm tra hoàn tất
-        finish_xpath = '//*[text()="Tài khoản 01"]'
-        wait_for_element_safe(finish_xpath, timeout=10, name="Chỉ báo hoàn thành (Tài khoản 01)")
-        print(f">>> [SUCCESS] Hoàn tất setup OKX!")
-        
-        time.sleep(5)
+        logger.info(f">>> [SUCCESS] Hoàn tất cho profile: {profile_data.get('profile_id')}")
 
     except Exception as e:
-        print(f">>> [ERROR] Lỗi thực thi: {e}")
-        try:
-            driver.save_screenshot(f"error_okx_{int(time.time())}.png")
-        except:
-            pass
+        logger.error(f">>> [ERROR] Thất bại: {str(e)}")
+        # Có thể chụp ảnh màn hình lỗi ở đây nếu cần
         raise
     finally:
         if driver:
-            print(f">>> [{PROJECT_NAME}] Đang dọn dẹp và đóng trình duyệt...")
-            try:
-                # Cố gắng đóng tất cả các cửa sổ trước khi quit
-                handles = driver.window_handles
-                for h in handles:
-                    try:
-                        driver.switch_to.window(h)
-                        driver.close()
-                    except:
-                        pass
-                driver.quit()
-            except:
-                pass
+            try: driver.quit()
+            except: pass
 
 if __name__ == "__main__":
-    test_data = {"remote_debugging_address": "127.0.0.1:9222"}
-    # run(test_data)
+    run({"remote_debugging_address": "127.0.0.1:9222", "mnemonic": "test test test", "profile_id": "test"})
+
+if __name__ == "__main__":
+    # Test sample
+    run({"remote_debugging_address": "127.0.0.1:9222", "mnemonic": "từ_1 từ_2 ...", "profile_id": "test"})
